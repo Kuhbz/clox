@@ -8,6 +8,7 @@
 #include "vm.h"
 
 static void repl() {
+    // char line[1024] = "-1+2*3*(2+1) -6";
     char line[1024];
     for (;;) {
         printf("> ");
