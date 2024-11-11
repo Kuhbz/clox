@@ -41,6 +41,9 @@ static void unary();
 static void binary();
 static void number();
 
+/**
+ *这是一个函数指针的表格。第一列将前缀解析函数与标识类型关联起来，第二列将中缀解析函数与标识类型相关联。
+ */
 ParseRule rules[] = {
   [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
   [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
@@ -165,10 +168,16 @@ static void endCompiler() {
 #endif
 }
 
+/**
+ * 从当前的标识开始，解析给定优先级或更高优先级的任何表达式。
+ * eg:我们调用parsePrecedence(PREC_ASSIGNMENT)，那么它就会解析整个表达式
+ */
 static void parsePrecedence(Precedence precedence) {
+    // 读取下一个标识并查找对应的ParseRule
     advance();
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
-    if (prefixRule == NULL) {
+
+    if (prefixRule == NULL) { // 如果下一个标识没有前缀解析器，那么这个标识一定是语法错误。 ??为什么
         error("Expect expression.");
         return;
     }
@@ -183,9 +192,7 @@ static void parsePrecedence(Precedence precedence) {
 }
 
 static void expression() {
-    // 替换部分开始
-    parsePrecedence(PREC_ASSIGNMENT);
-    // 替换部分结束
+    parsePrecedence(PREC_ASSIGNMENT); // 解析整个表达式
 }
 
 static void grouping() {
@@ -212,6 +219,9 @@ static void number() {
     emitConstant(value);
 }
 
+/**
+ * 前缀解析函数：当前缀解析函数被调用时，前缀标识已经被消耗了。
+ */
 static void unary() {
     TokenType operatorType = parser.previous.type;
 
@@ -240,10 +250,19 @@ bool compile(const char* source, Chunk* chunk) {
     return !parser.hadError;
 }
 
+/**
+ * 中缀解析函数：中缀解析函数被调用时，整个左操作数已经被编译，而随后的中缀操作符也已经被消耗掉。
+ */
 static void binary() {
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
-    parsePrecedence((Precedence)(rule->precedence + 1)); // +1 是什么意思?
+    parsePrecedence((Precedence)(rule->precedence + 1)); // 每个二元运算符的右操作数的优先级都比自己高一级
+    /**
+     * 我们对右操作数使用高一级的优先级，因为二元操作符是左结合的。给出一系列相同的运算符，如：1+2+3+4我们想这样解析它：
+     * ((1+2)+3)+4，因此，当解析第一个+的右侧操作数时，我们希望消耗2，但不消耗其余部分，所以我们使用比+高一个优先级的
+     * 操作数。但如果我们的操作符是右结合的，这就错了。考虑一下：a=b=c=d因为赋值是右结合的，我们希望将其解析为：a=(b=(c=d))，
+     * 为了实现这一点，我们会使用与当前操作符相同的优先级来调用parsePrecedence()。
+     */
 
     switch (operatorType) {
         case TOKEN_PLUS:          emitByte(OP_ADD); break;
