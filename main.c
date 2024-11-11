@@ -8,7 +8,7 @@
 #include "vm.h"
 
 static void repl() {
-    // char line[1024] = "-1+2*3*(2+1) -6";
+
     char line[1024];
     for (;;) {
         printf("> ");
@@ -20,6 +20,13 @@ static void repl() {
 
         interpret(line);
     }
+}
+
+// 调试代码
+static void test() {
+    char line[1024] = "-1*6+2*3*(2+1) -6";
+    // char line[1024] = "1+2+3+4";
+    interpret(line);
 }
 
 static char* readFile(const char* path) {
@@ -65,7 +72,8 @@ int main(int argc, const char* argv[]) {
     initVM();
 
     if (argc == 1) {
-        repl();
+        // repl();
+        test();
     } else if (argc == 2) {
         runFile(argv[1]);
     } else {
